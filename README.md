@@ -19,4 +19,5 @@
 - **Awaiting upstream patches**
   - [ ] Migrate to [webview_flutter](https://pub.dev/packages/webview_flutter). As a first-party package it is generelly better maintained and more stable than [the current solution](https://pub.dev/packages/flutter_inappwebview), but lacks Windows support at this point in time.
 - **Planned**
-  - [ ] Exploring the possibilities of custom content rendering directly in Flutter (vs. WebView). This has various potential benefits, but is also an enormous undertaking for the future. Not planned for until v1.0 **at the earliest.**
+  - [ ] Exploring the possibilities of custom content rendering directly in Flutter (vs. WebView). This has various potential benefits, but is also an enormous undertaking for the future. Not planned until v1.0 **at the earliest.**
+  
