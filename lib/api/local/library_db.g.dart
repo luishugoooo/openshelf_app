@@ -56,17 +56,26 @@ class $StoredBooksTable extends StoredBooks
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _coverUrlMeta = const VerificationMeta(
-    'coverUrl',
+  static const VerificationMeta _progressMeta = const VerificationMeta(
+    'progress',
   );
   @override
-  late final GeneratedColumn<String> coverUrl = GeneratedColumn<String>(
-    'cover_url',
+  late final GeneratedColumn<String> progress = GeneratedColumn<String>(
+    'progress',
     aliasedName,
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<BookType?, int> type =
+      GeneratedColumn<int>(
+        'type',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      ).withConverter<BookType?>($StoredBooksTable.$convertertypen);
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -74,7 +83,8 @@ class $StoredBooksTable extends StoredBooks
     author,
     publisher,
     year,
-    coverUrl,
+    progress,
+    type,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -115,10 +125,10 @@ class $StoredBooksTable extends StoredBooks
         year.isAcceptableOrUnknown(data['year']!, _yearMeta),
       );
     }
-    if (data.containsKey('cover_url')) {
+    if (data.containsKey('progress')) {
       context.handle(
-        _coverUrlMeta,
-        coverUrl.isAcceptableOrUnknown(data['cover_url']!, _coverUrlMeta),
+        _progressMeta,
+        progress.isAcceptableOrUnknown(data['progress']!, _progressMeta),
       );
     }
     return context;
@@ -150,9 +160,15 @@ class $StoredBooksTable extends StoredBooks
         DriftSqlType.int,
         data['${effectivePrefix}year'],
       ),
-      coverUrl: attachedDatabase.typeMapping.read(
+      progress: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}cover_url'],
+        data['${effectivePrefix}progress'],
+      ),
+      type: $StoredBooksTable.$convertertypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}type'],
+        ),
       ),
     );
   }
@@ -161,6 +177,11 @@ class $StoredBooksTable extends StoredBooks
   $StoredBooksTable createAlias(String alias) {
     return $StoredBooksTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<BookType, int, int> $convertertype =
+      const EnumIndexConverter<BookType>(BookType.values);
+  static JsonTypeConverter2<BookType?, int?, int?> $convertertypen =
+      JsonTypeConverter2.asNullable($convertertype);
 }
 
 class StoredBook extends DataClass implements Insertable<StoredBook> {
@@ -169,14 +190,16 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
   final String? author;
   final String? publisher;
   final int? year;
-  final String? coverUrl;
+  final String? progress;
+  final BookType? type;
   const StoredBook({
     required this.id,
     this.title,
     this.author,
     this.publisher,
     this.year,
-    this.coverUrl,
+    this.progress,
+    this.type,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -194,8 +217,13 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
     if (!nullToAbsent || year != null) {
       map['year'] = Variable<int>(year);
     }
-    if (!nullToAbsent || coverUrl != null) {
-      map['cover_url'] = Variable<String>(coverUrl);
+    if (!nullToAbsent || progress != null) {
+      map['progress'] = Variable<String>(progress);
+    }
+    if (!nullToAbsent || type != null) {
+      map['type'] = Variable<int>(
+        $StoredBooksTable.$convertertypen.toSql(type),
+      );
     }
     return map;
   }
@@ -213,9 +241,10 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
           ? const Value.absent()
           : Value(publisher),
       year: year == null && nullToAbsent ? const Value.absent() : Value(year),
-      coverUrl: coverUrl == null && nullToAbsent
+      progress: progress == null && nullToAbsent
           ? const Value.absent()
-          : Value(coverUrl),
+          : Value(progress),
+      type: type == null && nullToAbsent ? const Value.absent() : Value(type),
     );
   }
 
@@ -230,7 +259,10 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
       author: serializer.fromJson<String?>(json['author']),
       publisher: serializer.fromJson<String?>(json['publisher']),
       year: serializer.fromJson<int?>(json['year']),
-      coverUrl: serializer.fromJson<String?>(json['coverUrl']),
+      progress: serializer.fromJson<String?>(json['progress']),
+      type: $StoredBooksTable.$convertertypen.fromJson(
+        serializer.fromJson<int?>(json['type']),
+      ),
     );
   }
   @override
@@ -242,7 +274,10 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
       'author': serializer.toJson<String?>(author),
       'publisher': serializer.toJson<String?>(publisher),
       'year': serializer.toJson<int?>(year),
-      'coverUrl': serializer.toJson<String?>(coverUrl),
+      'progress': serializer.toJson<String?>(progress),
+      'type': serializer.toJson<int?>(
+        $StoredBooksTable.$convertertypen.toJson(type),
+      ),
     };
   }
 
@@ -252,14 +287,16 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
     Value<String?> author = const Value.absent(),
     Value<String?> publisher = const Value.absent(),
     Value<int?> year = const Value.absent(),
-    Value<String?> coverUrl = const Value.absent(),
+    Value<String?> progress = const Value.absent(),
+    Value<BookType?> type = const Value.absent(),
   }) => StoredBook(
     id: id ?? this.id,
     title: title.present ? title.value : this.title,
     author: author.present ? author.value : this.author,
     publisher: publisher.present ? publisher.value : this.publisher,
     year: year.present ? year.value : this.year,
-    coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
+    progress: progress.present ? progress.value : this.progress,
+    type: type.present ? type.value : this.type,
   );
   StoredBook copyWithCompanion(StoredBooksCompanion data) {
     return StoredBook(
@@ -268,7 +305,8 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
       author: data.author.present ? data.author.value : this.author,
       publisher: data.publisher.present ? data.publisher.value : this.publisher,
       year: data.year.present ? data.year.value : this.year,
-      coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
+      progress: data.progress.present ? data.progress.value : this.progress,
+      type: data.type.present ? data.type.value : this.type,
     );
   }
 
@@ -280,13 +318,15 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
           ..write('author: $author, ')
           ..write('publisher: $publisher, ')
           ..write('year: $year, ')
-          ..write('coverUrl: $coverUrl')
+          ..write('progress: $progress, ')
+          ..write('type: $type')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, author, publisher, year, coverUrl);
+  int get hashCode =>
+      Object.hash(id, title, author, publisher, year, progress, type);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -296,7 +336,8 @@ class StoredBook extends DataClass implements Insertable<StoredBook> {
           other.author == this.author &&
           other.publisher == this.publisher &&
           other.year == this.year &&
-          other.coverUrl == this.coverUrl);
+          other.progress == this.progress &&
+          other.type == this.type);
 }
 
 class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
@@ -305,14 +346,16 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
   final Value<String?> author;
   final Value<String?> publisher;
   final Value<int?> year;
-  final Value<String?> coverUrl;
+  final Value<String?> progress;
+  final Value<BookType?> type;
   const StoredBooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.author = const Value.absent(),
     this.publisher = const Value.absent(),
     this.year = const Value.absent(),
-    this.coverUrl = const Value.absent(),
+    this.progress = const Value.absent(),
+    this.type = const Value.absent(),
   });
   StoredBooksCompanion.insert({
     this.id = const Value.absent(),
@@ -320,7 +363,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
     this.author = const Value.absent(),
     this.publisher = const Value.absent(),
     this.year = const Value.absent(),
-    this.coverUrl = const Value.absent(),
+    this.progress = const Value.absent(),
+    this.type = const Value.absent(),
   });
   static Insertable<StoredBook> custom({
     Expression<int>? id,
@@ -328,7 +372,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
     Expression<String>? author,
     Expression<String>? publisher,
     Expression<int>? year,
-    Expression<String>? coverUrl,
+    Expression<String>? progress,
+    Expression<int>? type,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -336,7 +381,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
       if (author != null) 'author': author,
       if (publisher != null) 'publisher': publisher,
       if (year != null) 'year': year,
-      if (coverUrl != null) 'cover_url': coverUrl,
+      if (progress != null) 'progress': progress,
+      if (type != null) 'type': type,
     });
   }
 
@@ -346,7 +392,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
     Value<String?>? author,
     Value<String?>? publisher,
     Value<int?>? year,
-    Value<String?>? coverUrl,
+    Value<String?>? progress,
+    Value<BookType?>? type,
   }) {
     return StoredBooksCompanion(
       id: id ?? this.id,
@@ -354,7 +401,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
       author: author ?? this.author,
       publisher: publisher ?? this.publisher,
       year: year ?? this.year,
-      coverUrl: coverUrl ?? this.coverUrl,
+      progress: progress ?? this.progress,
+      type: type ?? this.type,
     );
   }
 
@@ -376,8 +424,13 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
     if (year.present) {
       map['year'] = Variable<int>(year.value);
     }
-    if (coverUrl.present) {
-      map['cover_url'] = Variable<String>(coverUrl.value);
+    if (progress.present) {
+      map['progress'] = Variable<String>(progress.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<int>(
+        $StoredBooksTable.$convertertypen.toSql(type.value),
+      );
     }
     return map;
   }
@@ -390,7 +443,8 @@ class StoredBooksCompanion extends UpdateCompanion<StoredBook> {
           ..write('author: $author, ')
           ..write('publisher: $publisher, ')
           ..write('year: $year, ')
-          ..write('coverUrl: $coverUrl')
+          ..write('progress: $progress, ')
+          ..write('type: $type')
           ..write(')'))
         .toString();
   }
@@ -414,7 +468,8 @@ typedef $$StoredBooksTableCreateCompanionBuilder =
       Value<String?> author,
       Value<String?> publisher,
       Value<int?> year,
-      Value<String?> coverUrl,
+      Value<String?> progress,
+      Value<BookType?> type,
     });
 typedef $$StoredBooksTableUpdateCompanionBuilder =
     StoredBooksCompanion Function({
@@ -423,7 +478,8 @@ typedef $$StoredBooksTableUpdateCompanionBuilder =
       Value<String?> author,
       Value<String?> publisher,
       Value<int?> year,
-      Value<String?> coverUrl,
+      Value<String?> progress,
+      Value<BookType?> type,
     });
 
 class $$StoredBooksTableFilterComposer
@@ -460,10 +516,16 @@ class $$StoredBooksTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get coverUrl => $composableBuilder(
-    column: $table.coverUrl,
+  ColumnFilters<String> get progress => $composableBuilder(
+    column: $table.progress,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<BookType?, BookType, int> get type =>
+      $composableBuilder(
+        column: $table.type,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 }
 
 class $$StoredBooksTableOrderingComposer
@@ -500,8 +562,13 @@ class $$StoredBooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get coverUrl => $composableBuilder(
-    column: $table.coverUrl,
+  ColumnOrderings<String> get progress => $composableBuilder(
+    column: $table.progress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -530,8 +597,11 @@ class $$StoredBooksTableAnnotationComposer
   GeneratedColumn<int> get year =>
       $composableBuilder(column: $table.year, builder: (column) => column);
 
-  GeneratedColumn<String> get coverUrl =>
-      $composableBuilder(column: $table.coverUrl, builder: (column) => column);
+  GeneratedColumn<String> get progress =>
+      $composableBuilder(column: $table.progress, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<BookType?, int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
 }
 
 class $$StoredBooksTableTableManager
@@ -570,14 +640,16 @@ class $$StoredBooksTableTableManager
                 Value<String?> author = const Value.absent(),
                 Value<String?> publisher = const Value.absent(),
                 Value<int?> year = const Value.absent(),
-                Value<String?> coverUrl = const Value.absent(),
+                Value<String?> progress = const Value.absent(),
+                Value<BookType?> type = const Value.absent(),
               }) => StoredBooksCompanion(
                 id: id,
                 title: title,
                 author: author,
                 publisher: publisher,
                 year: year,
-                coverUrl: coverUrl,
+                progress: progress,
+                type: type,
               ),
           createCompanionCallback:
               ({
@@ -586,14 +658,16 @@ class $$StoredBooksTableTableManager
                 Value<String?> author = const Value.absent(),
                 Value<String?> publisher = const Value.absent(),
                 Value<int?> year = const Value.absent(),
-                Value<String?> coverUrl = const Value.absent(),
+                Value<String?> progress = const Value.absent(),
+                Value<BookType?> type = const Value.absent(),
               }) => StoredBooksCompanion.insert(
                 id: id,
                 title: title,
                 author: author,
                 publisher: publisher,
                 year: year,
-                coverUrl: coverUrl,
+                progress: progress,
+                type: type,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

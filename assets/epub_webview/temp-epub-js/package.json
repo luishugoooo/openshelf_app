@@ -1,0 +1,61 @@
+{
+  "name": "@intity/epub-js",
+  "version": "0.3.96",
+  "description": "Parse and Renderer EPUB containers",
+  "main": "lib/index.js",
+  "type": "module",
+  "module": "src/index.js",
+  "types": "types/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intity/epub-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/intity/epub-js/issues"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "docs": "node docsgen.cjs",
+    "lint": "eslint src",
+    "start": "cross-env NODE_ENV=development webpack serve",
+    "build": "cross-env NODE_ENV=production webpack --progress",
+    "minify": "cross-env NODE_ENV=production MINIMIZE=true webpack --progress",
+    "compile": "babel -d lib/ src/",
+    "watch": "babel --watch -d lib/ src/",
+    "prepare": "npm run compile && npm run build && npm run minify"
+  },
+  "author": "fchasen@gmail.com",
+  "license": "BSD-2-Clause",
+  "devDependencies": {
+    "@babel/cli": "^7.28.0",
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-proposal-export-default-from": "^7.27.1",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/runtime": "^7.27.6",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^10.0.0",
+    "eslint": "^9.30.1",
+    "jsdoc": "^4.0.4",
+    "jsdoc-to-markdown": "^8.0.3",
+    "mocha": "^10.8.2",
+    "process": "^0.11.10",
+    "terser-webpack-plugin": "^5.3.14",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-middleware": "^7.4.2",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "dependencies": {
+    "assert": "^2.1.0",
+    "core-js": "^3.43.0",
+    "event-emitter": "^0.3.5",
+    "jszip": "^3.10.1",
+    "localforage": "^1.10.0",
+    "lodash": "^4.17.21",
+    "marked": "^15.0.12"
+  }
+}

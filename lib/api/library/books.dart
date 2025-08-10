@@ -27,7 +27,8 @@ class BooksNotifier extends _$BooksNotifier {
             author: e.author,
             publisher: e.publisher,
             year: e.year,
-            coverUrl: e.coverUrl,
+            progress: e.progress,
+            type: e.type,
           ),
         )
         .toList();
@@ -35,7 +36,8 @@ class BooksNotifier extends _$BooksNotifier {
     List<Book> books = [];
     try {
       books = await sync();
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      print(e);
       print(
         "BooksNotifier.build: error syncing books, continue in offline mode",
       );
@@ -51,7 +53,7 @@ class BooksNotifier extends _$BooksNotifier {
   Future<List<Book>> sync() async {
     final res =
         (await ref.read(dioProvider).get("/library/books")).data as List;
-    //print(res);
+    print(res);
     final db = ref.read(libraryDatabaseProvider);
     final books = res.map((e) => Book.fromJson(e)).toList();
     await db.batch((b) {
@@ -64,7 +66,8 @@ class BooksNotifier extends _$BooksNotifier {
             author: Value(e.author),
             publisher: Value(e.publisher),
             year: Value(e.year),
-            coverUrl: Value(e.coverUrl),
+            progress: Value(e.progress),
+            type: Value(e.type ?? BookType.epub),
           ),
         ),
       );

@@ -4,6 +4,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'types.g.dart';
 part 'types.freezed.dart';
 
+enum BookType { epub }
+
 @freezed
 abstract class Book with _$Book {
   const factory Book({
@@ -12,7 +14,8 @@ abstract class Book with _$Book {
     required String? author,
     required String? publisher,
     required int? year,
-    required String? coverUrl,
+    required String? progress,
+    required BookType? type,
   }) = _Book;
 
   factory Book.fromJson(Map<String, dynamic> json) => _$BookFromJson(json);
@@ -24,7 +27,8 @@ class StoredBooks extends drift.Table {
   drift.TextColumn get author => text().nullable()();
   drift.TextColumn get publisher => text().nullable()();
   drift.IntColumn get year => integer().nullable()();
-  drift.TextColumn get coverUrl => text().nullable()();
+  drift.TextColumn get progress => text().nullable()();
+  drift.IntColumn get type => intEnum<BookType>().nullable()();
 
   @override
   Set<drift.Column<Object>> get primaryKey => {id};

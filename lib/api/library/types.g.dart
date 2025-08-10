@@ -12,7 +12,8 @@ _Book _$BookFromJson(Map<String, dynamic> json) => _Book(
   author: json['author'] as String?,
   publisher: json['publisher'] as String?,
   year: (json['year'] as num?)?.toInt(),
-  coverUrl: json['coverUrl'] as String?,
+  progress: json['progress'] as String?,
+  type: $enumDecodeNullable(_$BookTypeEnumMap, json['type']),
 );
 
 Map<String, dynamic> _$BookToJson(_Book instance) => <String, dynamic>{
@@ -21,5 +22,8 @@ Map<String, dynamic> _$BookToJson(_Book instance) => <String, dynamic>{
   'author': instance.author,
   'publisher': instance.publisher,
   'year': instance.year,
-  'coverUrl': instance.coverUrl,
+  'progress': instance.progress,
+  'type': _$BookTypeEnumMap[instance.type],
 };
+
+const _$BookTypeEnumMap = {BookType.epub: 'epub'};

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Book {
 
- int get id; String? get title; String? get author; String? get publisher; int? get year; String? get coverUrl;
+ int get id; String? get title; String? get author; String? get publisher; int? get year; String? get progress; BookType? get type;
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $BookCopyWith<Book> get copyWith => _$BookCopyWithImpl<Book>(this as Book, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Book&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.year, year) || other.year == year)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Book&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.year, year) || other.year == year)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.type, type) || other.type == type));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,author,publisher,year,coverUrl);
+int get hashCode => Object.hash(runtimeType,id,title,author,publisher,year,progress,type);
 
 @override
 String toString() {
-  return 'Book(id: $id, title: $title, author: $author, publisher: $publisher, year: $year, coverUrl: $coverUrl)';
+  return 'Book(id: $id, title: $title, author: $author, publisher: $publisher, year: $year, progress: $progress, type: $type)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $BookCopyWith<$Res>  {
   factory $BookCopyWith(Book value, $Res Function(Book) _then) = _$BookCopyWithImpl;
 @useResult
 $Res call({
- int id, String? title, String? author, String? publisher, int? year, String? coverUrl
+ int id, String? title, String? author, String? publisher, int? year, String? progress, BookType? type
 });
 
 
@@ -65,15 +65,16 @@ class _$BookCopyWithImpl<$Res>
 
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? author = freezed,Object? publisher = freezed,Object? year = freezed,Object? coverUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? author = freezed,Object? publisher = freezed,Object? year = freezed,Object? progress = freezed,Object? type = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,author: freezed == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
 as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
 as String?,year: freezed == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
-as int?,coverUrl: freezed == coverUrl ? _self.coverUrl : coverUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as int?,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as BookType?,
   ));
 }
 
@@ -158,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? coverUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? progress,  BookType? type)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Book() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.coverUrl);case _:
+return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.progress,_that.type);case _:
   return orElse();
 
 }
@@ -179,10 +180,10 @@ return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? coverUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? progress,  BookType? type)  $default,) {final _that = this;
 switch (_that) {
 case _Book():
-return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.coverUrl);case _:
+return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.progress,_that.type);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +200,10 @@ return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? coverUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? title,  String? author,  String? publisher,  int? year,  String? progress,  BookType? type)?  $default,) {final _that = this;
 switch (_that) {
 case _Book() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.coverUrl);case _:
+return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_that.progress,_that.type);case _:
   return null;
 
 }
@@ -214,7 +215,7 @@ return $default(_that.id,_that.title,_that.author,_that.publisher,_that.year,_th
 @JsonSerializable()
 
 class _Book implements Book {
-  const _Book({required this.id, required this.title, required this.author, required this.publisher, required this.year, required this.coverUrl});
+  const _Book({required this.id, required this.title, required this.author, required this.publisher, required this.year, required this.progress, required this.type});
   factory _Book.fromJson(Map<String, dynamic> json) => _$BookFromJson(json);
 
 @override final  int id;
@@ -222,7 +223,8 @@ class _Book implements Book {
 @override final  String? author;
 @override final  String? publisher;
 @override final  int? year;
-@override final  String? coverUrl;
+@override final  String? progress;
+@override final  BookType? type;
 
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +239,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Book&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.year, year) || other.year == year)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Book&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.year, year) || other.year == year)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.type, type) || other.type == type));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,author,publisher,year,coverUrl);
+int get hashCode => Object.hash(runtimeType,id,title,author,publisher,year,progress,type);
 
 @override
 String toString() {
-  return 'Book(id: $id, title: $title, author: $author, publisher: $publisher, year: $year, coverUrl: $coverUrl)';
+  return 'Book(id: $id, title: $title, author: $author, publisher: $publisher, year: $year, progress: $progress, type: $type)';
 }
 
 
@@ -257,7 +259,7 @@ abstract mixin class _$BookCopyWith<$Res> implements $BookCopyWith<$Res> {
   factory _$BookCopyWith(_Book value, $Res Function(_Book) _then) = __$BookCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String? title, String? author, String? publisher, int? year, String? coverUrl
+ int id, String? title, String? author, String? publisher, int? year, String? progress, BookType? type
 });
 
 
@@ -274,15 +276,16 @@ class __$BookCopyWithImpl<$Res>
 
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? author = freezed,Object? publisher = freezed,Object? year = freezed,Object? coverUrl = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? author = freezed,Object? publisher = freezed,Object? year = freezed,Object? progress = freezed,Object? type = freezed,}) {
   return _then(_Book(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,author: freezed == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
 as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
 as String?,year: freezed == year ? _self.year : year // ignore: cast_nullable_to_non_nullable
-as int?,coverUrl: freezed == coverUrl ? _self.coverUrl : coverUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as int?,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as BookType?,
   ));
 }
 

@@ -62,7 +62,7 @@ class AuthNotifier extends _$AuthNotifier {
     final response = await ref
         .read(dioProvider)
         .post(
-          "$instanceUrl/auth/login",
+          "$instanceUrl/api/auth/login",
           data: {"email": email, "password": password},
         )
         .onError((error, stackTrace) {
@@ -100,7 +100,7 @@ class AuthNotifier extends _$AuthNotifier {
           AuthCredentials(
             accessToken: accessToken,
             refreshToken: refreshToken,
-            instanceUrl: instanceUrl,
+            instanceUrl: "$instanceUrl/api",
           ),
         );
     ref.invalidateSelf();

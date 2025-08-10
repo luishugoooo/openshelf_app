@@ -48,32 +48,30 @@ class _BookCardState extends ConsumerState<BookCard> {
       setState(() => coverImage = cachedImage);
       return;
     }
-    if (widget.book.coverUrl != null) {
-      Uint8List? image;
+    Uint8List? image;
 
-      await ref
-          .read(dioProvider)
-          .get(
-            widget.book.coverUrl!,
-            options: Options(responseType: ResponseType.bytes),
-          )
-          .then((value) {
-            image = value.data as Uint8List;
-          })
-          .onError((error, stackTrace) {
-            print(
-              "BookCard.loadCoverImage: error fetching cover image for ${widget.book.id} with error $error",
-            );
-            return null;
-          });
-      if (image == null) {
-        return;
-      }
-      setState(() => coverImage = image);
-      final cacheDir = await getApplicationDocumentsDirectory();
-      final file = File("${cacheDir.path}/cover_${widget.book.id}.cache_image");
-      file.writeAsBytesSync(coverImage!);
+    await ref
+        .read(dioProvider)
+        .get(
+          "/library/cover/${widget.book.id}",
+          options: Options(responseType: ResponseType.bytes),
+        )
+        .then((value) {
+          image = value.data as Uint8List;
+        })
+        .onError((error, stackTrace) {
+          print(
+            "BookCard.loadCoverImage: error fetching cover image for ${widget.book.id} with error $error",
+          );
+          return null;
+        });
+    if (image == null) {
+      return;
     }
+    setState(() => coverImage = image);
+    final cacheDir = await getApplicationDocumentsDirectory();
+    final file = File("${cacheDir.path}/cover_${widget.book.id}.cache_image");
+    file.writeAsBytesSync(coverImage!);
   }
 
   Future<void> loadLocalFile() async {

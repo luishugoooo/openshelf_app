@@ -141,7 +141,7 @@ class _LocalFileProviderElement extends AutoDisposeFutureProviderElement<File>
   int get bookId => (origin as LocalFileProvider).bookId;
 }
 
-String _$booksNotifierHash() => r'54e693dd1dea6dbd1b78c6eb2b39b2fd51d171ae';
+String _$booksNotifierHash() => r'a3d133cbdbc4331fe6639891667206c9c34134d5';
 
 /// See also [BooksNotifier].
 @ProviderFor(BooksNotifier)

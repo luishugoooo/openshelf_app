@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
 
-      error: (error, stack) => Text("Error: $error"),
+      error: (error, stack) => throw error,
       loading: () => const Center(child: CircularProgressIndicator()),
     );
   }

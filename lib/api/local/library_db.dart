@@ -16,6 +16,9 @@ class LibraryDatabase extends _$LibraryDatabase {
   int get schemaVersion => 1;
 
   static QueryExecutor _openConnection() {
+    getApplicationSupportDirectory().then((value) {
+      print(value.path);
+    });
     return driftDatabase(
       name: 'library_database',
       native: const DriftNativeOptions(
