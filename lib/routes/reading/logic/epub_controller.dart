@@ -22,4 +22,6 @@ class EpubController {
       );
     }
   }
+
+  InAppLocalhostServer? server;
 }

@@ -1,37 +1,24 @@
-
-
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EPUB</title>
-    <style type="text/css">
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>EPUB Reader</title>
+
+    <style>
       body {
-        display: flex;
-        -webkit-align-items: center;
-        -webkit-justify-content: center;
-      }
-
-      #viewer {
-        width: 100%;
-        height: 100%;
-        margin: 5px auto;
-        background: white;
-      }
-
-      @media only screen and (min-device-width: 320px) and (max-device-width: 667px) {
-        .arrow {
-          position: inherit;
-          display: none;
-        }
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
       }
     </style>
   </head>
   <body>
-    Hi from webview
-    <!-- <div id="viewer"></div>
-    <script type="module" src="src/epubView.ts"></script> -->
+    <div id="reader"></div>
+    <script type="module" src="/src/epubView.ts"></script>
   </body>
 </html>

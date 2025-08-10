@@ -1,12 +1,10 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
 import 'package:openshelf_app/routes/reading/logic/epub_controller.dart';
 import 'package:openshelf_app/routes/reading/reader_header.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class EpubReader extends ConsumerStatefulWidget {
   final Uint8List epubBytes;
@@ -22,21 +20,41 @@ class EpubReader extends ConsumerStatefulWidget {
 }
 
 class _EpubReaderState extends ConsumerState<EpubReader> {
-  InAppWebViewController? webViewController;
+  WebViewController? webViewController;
 
-  loadBook() async {
-    Uint8List data = widget.epubBytes;
-
-    webViewController?.evaluateJavascript(source: 'loadBook($data)');
-  }
-
-  addJavascriptHandlers() {
-    webViewController?.addJavaScriptHandler(
-      handlerName: 'readyToLoad',
-      callback: (args) {
-        loadBook();
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            print("DART RECEIVED PROGRESS: $progress");
+            // Update loading bar.
+          },
+          onPageStarted: (String url) {
+            print("DART RECEIVED PAGE STARTED: $url");
+          },
+          onPageFinished: (String url) {},
+          onHttpError: (HttpResponseError error) {
+            print("DART RECEIVED HTTP ERROR: ${error.toString()}");
+          },
+          onWebResourceError: (WebResourceError error) {
+            print("DART RECEIVED WEB RESOURCE ERROR: ${error.toString()}");
+          },
+        ),
+      )
+      ..addJavaScriptChannel(
+        "EpubChannel",
+        onMessageReceived: (JavaScriptMessage message) {
+          print("DART RECEIVED MESSAGE: ${message.message}");
+        },
+      )
+      ..setOnConsoleMessage((message) {
+        print("DART RECEIVED JS CONSOLE MESSAGE: ${message.message}");
+      })
+      ..loadFlutterAsset("assets/epub_webview/dist/index.html");
   }
 
   @override
@@ -47,36 +65,30 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         height: 50,
         child: Row(
           children: [
-            IconButton(onPressed: () {}, icon: Icon(FIcons.arrowLeft)),
-            IconButton(onPressed: () {}, icon: Icon(FIcons.arrowRight)),
+            IconButton(
+              onPressed: () async {
+                await webViewController?.runJavaScript("previousPage()");
+              },
+              icon: Icon(FIcons.arrowLeft),
+            ),
+            IconButton(
+              onPressed: () async {
+                await webViewController?.runJavaScript("nextPage()");
+              },
+              icon: Icon(FIcons.arrowRight),
+            ),
+            FButton(
+              onPress: () async {
+                await webViewController?.runJavaScript(
+                  "loadBook(${widget.epubBytes})",
+                );
+              },
+              child: Text("Load Book"),
+            ),
           ],
         ),
       ),
-      child: Center(
-        child: InAppWebView(
-          initialFile: 'assets/epub_webview/dist/index.html',
-          onConsoleMessage: (controller, consoleMessage) {
-            if (kDebugMode) {
-              debugPrint("JS_LOG: ${consoleMessage.message}");
-              // debugPrint(consoleMessage.message);
-            }
-          },
-          shouldOverrideUrlLoading: (controller, url) async {
-            return NavigationActionPolicy.ALLOW;
-          },
-          onPermissionRequest: (controller, request) async {
-            return PermissionResponse(
-              resources: request.resources,
-              action: PermissionResponseAction.GRANT,
-            );
-          },
-          onWebViewCreated: (controller) {
-            webViewController = controller;
-            widget.epubController.setWebViewController(webViewController!);
-            addJavascriptHandlers();
-          },
-        ),
-      ),
+      child: Center(child: WebViewWidget(controller: webViewController!)),
     );
   }
 }

@@ -1,21 +1,30 @@
 import ePub from "@intity/epub-js";
+import { Rendition } from "@intity/epub-js";
 
-let book = ePub();
-let rendition;
+let book = ePub({});
+
+let rendition: Rendition;
 let displayed;
-
-export function loadBook(blob: Uint8Array) {
+console.log("epubView file loaded");
+(window as any).loadBook = async function (blob: Uint8Array) {
   let uint8Array = new Uint8Array(blob);
-  book.open(uint8Array);
-  rendition = book.renderTo("viewer", {
-    height: "100vh",
-    width: "100vw",
+  await book.open(uint8Array);
+  rendition = book.renderTo("reader", {
+    height: "100%",
+    manager: "default",
     sandbox: ["allow-same-origin", "allow-scripts"],
   });
   displayed = rendition.display();
 
   displayed.then(() => {
-    console.log("Book loaded");
-    //readyToLoad();
+    EpubChannel.postMessage("Book loaded");
   });
-}
+};
+
+(window as any).nextPage = function () {
+  rendition.next();
+};
+
+(window as any).previousPage = function () {
+  rendition.prev();
+};

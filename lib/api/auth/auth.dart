@@ -48,8 +48,12 @@ class AuthNotifier extends _$AuthNotifier {
       print(
         "AuthNotifier.build: error fetching user, continue in offline mode",
       );
-      user = User.fromJson(jsonDecode(storedUser!));
-      yield user.copyWith(isOnline: false);
+      if (storedUser != null) {
+        user = User.fromJson(jsonDecode(storedUser));
+        yield user.copyWith(isOnline: false);
+      } else {
+        yield null;
+      }
       return;
     }
   }

@@ -1,28 +1,26 @@
 import "./style.css";
-import typescriptLogo from "./typescript.svg";
-import viteLogo from "/vite.svg";
-import ePub from "@intity/epub-js";
 
-// Test that ePub is available
-console.log("ePub.js loaded:", ePub);
+declare const EpubChannel: { postMessage: (msg: string) => void } | undefined;
 
-document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
+console.log("main.ts file loaded");
+const appEl = document.querySelector<HTMLDivElement>("#app");
+if (appEl) {
+  appEl.innerHTML = `
   <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-    <p class="read-the-docs">
-      ePub.js is loaded and ready to use!
+    <h1>EPUB Reader</h1>
+    <p>
+      This is an epub reader.
     </p>
   </div>
 `;
+}
+
+// Internal API (not attached to window)
+(window as any).test = function () {
+  console.log("TEST");
+  try {
+    EpubChannel?.postMessage("TEST");
+  } catch (e) {
+    console.warn("EpubChannel not available", e);
+  }
+};
