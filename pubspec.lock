@@ -325,10 +325,10 @@ packages:
     dependency: "direct main"
     description:
       name: epub_pro
-      sha256: "3b40308c26b2721e6fb225363ec0b39cedc7b9196fef3ef23ea86e32b662b77b"
+      sha256: "30768da81e16102af7e5b6f6a24b35e54e1b9cb476230a76cd599beb0f5d8392"
       url: "https://pub.dev"
     source: hosted
-    version: "5.4.1"
+    version: "5.5.1"
   fake_async:
     dependency: transitive
     description:
@@ -558,7 +558,7 @@ packages:
     source: hosted
     version: "4.3.0"
   html:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: html
       sha256: "6d1264f2dffa1b1101c25a91dff0dc2daee4c18e87cd8538729773c073dbf602"
@@ -1210,6 +1210,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.22.1"
+  word_count:
+    dependency: transitive
+    description:
+      name: word_count
+      sha256: "98ccd8ef6d614bcf11a7e6d39d43d08193a3a42d360104234018d1dfb86c413d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   xdg_directories:
     dependency: transitive
     description:
