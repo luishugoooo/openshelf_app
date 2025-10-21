@@ -36,30 +36,6 @@
         page-break-inside: avoid;
         break-inside: avoid-page;
       }
-
-      /* Basic styling for content */
-
-      /* --- UI Controls --- */
-      .controls {
-        position: fixed;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 10px;
-        color: white;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-
-      button {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
     </style>
   </head>
   <body>
@@ -222,12 +198,6 @@
           diam consequat ligula, non dictum sem sem non arcu.
         </p>
       </div>
-    </div>
-
-    <div class="controls">
-      <button id="prev-btn">Previous</button>
-      <div id="page-info">Page 1 / ?</div>
-      <button id="next-btn">Next</button>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

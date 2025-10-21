@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
@@ -25,6 +26,8 @@ class EpubReader extends ConsumerStatefulWidget {
 class _EpubReaderState extends ConsumerState<EpubReader> {
   WebViewController? webViewController;
   ep.EpubBook? book;
+  int currentPage = 1;
+  int totalPages = 1;
 
   void parseBook() async {
     book = await ep.EpubReader.readBook(widget.epubBytes);
@@ -68,9 +71,14 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         ),
       )
       ..addJavaScriptChannel(
-        "EpubChannel",
+        "PageCountChannel",
         onMessageReceived: (JavaScriptMessage message) {
-          print("DART RECEIVED MESSAGE: ${message.message}");
+          print("DART RECEIVED PAGE COUNT MESSAGE: ${message.message}");
+          final data = jsonDecode(message.message) as Map<String, dynamic>;
+          setState(() {
+            currentPage = data['current'] as int;
+            totalPages = data['total'] as int;
+          });
         },
       )
       ..setOnConsoleMessage((message) {
@@ -85,6 +93,14 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   }
 
   @override
+  void dispose() {
+    webViewController?.loadRequest(Uri.parse("about:blank"));
+    webViewController?.setNavigationDelegate(NavigationDelegate());
+    webViewController?.clearCache();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FScaffold(
       header: ReaderHeader(chapters: [], onChapterSelected: (index) {}),
@@ -94,7 +110,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
           children: [
             IconButton(
               onPressed: () async {
-                await webViewController?.runJavaScript("previousPage()");
+                await webViewController?.runJavaScript("prevPage()");
               },
               icon: Icon(FIcons.arrowLeft),
             ),
@@ -147,12 +163,31 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
               },
               child: Text("Load Book"),
             ),
+            Text("Page $currentPage / $totalPages"),
           ],
         ),
       ),
       child: book == null
           ? Text("loading")
-          : Center(child: WebViewWidget(controller: webViewController!)),
+          : Center(
+              child: Stack(
+                children: [
+                  WebViewWidget(
+                    controller: webViewController!,
+                    gestureRecognizers: {},
+                  ),
+                  GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      if (details.primaryVelocity! < 0) {
+                        webViewController?.runJavaScript("nextPage()");
+                      } else {
+                        webViewController?.runJavaScript("prevPage()");
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

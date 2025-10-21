@@ -26,9 +26,6 @@ interface EpubResources {
 
 let mask: HTMLElement | null;
 let scroller: HTMLElement | null;
-let pageInfo: HTMLElement | null;
-let prevBtn: HTMLElement | null;
-let nextBtn: HTMLElement | null;
 
 let currentPage = 1;
 let totalPages = 1;
@@ -47,7 +44,7 @@ function applyPageWidth() {
 }
 
 function initializeReader() {
-  if (!mask || !scroller || !pageInfo) return;
+  if (!mask || !scroller) return;
 
   applyPageWidth();
 
@@ -60,38 +57,33 @@ function initializeReader() {
     scrollerEl.style.width = `${totalPages * pageWidth}px`;
     currentPage = Math.min(currentPage, totalPages);
     maskEl.scrollLeft = (currentPage - 1) * pageWidth;
-    updatePageInfo();
+    updatePageCount();
   });
 }
 
-function updatePageInfo() {
-  if (!pageInfo) return;
-  pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+function updatePageCount() {
+  PageCountChannel.postMessage(
+    JSON.stringify({ current: currentPage, total: totalPages })
+  );
 }
 
-function nextPage() {
+(window as any).nextPage = function () {
   if (!mask || currentPage >= totalPages) return;
   currentPage++;
   mask.scrollLeft = (currentPage - 1) * pageWidth;
-  updatePageInfo();
-}
+  updatePageCount();
+};
 
-function prevPage() {
+(window as any).prevPage = function () {
   if (!mask || currentPage <= 1) return;
   currentPage--;
   mask.scrollLeft = (currentPage - 1) * pageWidth;
-  updatePageInfo();
-}
+  updatePageCount();
+};
 
 function setupPaginationControls() {
   mask = document.getElementById("viewer-mask");
   scroller = document.getElementById("viewer-scroller");
-  pageInfo = document.getElementById("page-info");
-  prevBtn = document.getElementById("prev-btn");
-  nextBtn = document.getElementById("next-btn");
-
-  prevBtn?.addEventListener("click", prevPage);
-  nextBtn?.addEventListener("click", nextPage);
   window.addEventListener("load", initializeReader);
   window.addEventListener("resize", initializeReader);
 }
