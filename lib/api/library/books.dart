@@ -50,6 +50,11 @@ class BooksNotifier extends _$BooksNotifier {
     }
   }
 
+  Future<void> scanLibrary() async {
+    await ref.read(dioProvider).post("/library/scan");
+    ref.invalidateSelf();
+  }
+
   Future<List<Book>> sync() async {
     final res =
         (await ref.read(dioProvider).get("/library/books")).data as List;

@@ -118,6 +118,13 @@ class OpenShelfSidebar extends ConsumerWidget {
           children: [
             FButton(
               style: FButtonStyle.secondary(),
+              onPress: () async {
+                await ref.read(booksNotifierProvider.notifier).scanLibrary();
+              },
+              child: const Text('Scan Library'),
+            ),
+            FButton(
+              style: FButtonStyle.secondary(),
               onPress: () {
                 ref.invalidate(booksNotifierProvider);
               },
