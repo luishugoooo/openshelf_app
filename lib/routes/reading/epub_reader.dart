@@ -25,13 +25,12 @@ class EpubReader extends ConsumerStatefulWidget {
 
 class _EpubReaderState extends ConsumerState<EpubReader> {
   WebViewController? webViewController;
-  ep.EpubBook? book;
+  ep.EpubBookRef? book;
   int currentPage = 1;
   int totalPages = 1;
 
   void parseBook() async {
-    book = await ep.EpubReader.readBook(widget.epubBytes);
-
+    book = await ep.EpubReader.openBook(widget.epubBytes);
     setState(() {});
   }
 
@@ -86,7 +85,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
       });
 
     if (kDebugMode) {
-      webViewController?.loadRequest(Uri.parse("http://10.0.2.2:5173"));
+      webViewController?.loadRequest(Uri.parse("http://localhost:5173"));
     } else {
       webViewController?.loadFlutterAsset("assets/webview_new/dist/index.html");
     }
@@ -100,10 +99,74 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     super.dispose();
   }
 
+  //TODO separate asset loading from chapter loading for better performance
+  Future<void> loadChapter(ep.EpubNavigationPoint point) async {
+    final src = point.content?.source;
+    if (src == null) {
+      return;
+    }
+    final htmlContent = await book?.content?.html[src]?.readContentAsText();
+    if (htmlContent == null) {
+      return;
+    }
+    final cssMap = <String, String>{};
+    final cssRefs = book?.content?.css;
+    if (cssRefs != null) {
+      for (var cssEl in cssRefs.entries) {
+        final cssContent = await cssEl.value.readContentAsText();
+        cssMap[cssEl.key] = cssContent;
+      }
+    }
+
+    // Prepare images as base64 data URIs
+    final imageMap = <String, String>{};
+    final imageRefs = book?.content?.images;
+    if (imageRefs != null) {
+      for (var imageEl in imageRefs.entries) {
+        final imageBytes = await imageEl.value.readContentAsBytes();
+        if (imageBytes.isNotEmpty) {
+          final base64Image = base64Encode(imageBytes);
+          final mimeType = _getMimeType(imageEl.key);
+          imageMap[imageEl.key] = 'data:$mimeType;base64,$base64Image';
+        }
+      }
+    }
+
+    print('HTML Content length: ${htmlContent.length}');
+    print('CSS files: ${cssMap.length}');
+    print('Images: ${imageMap.length}');
+
+    // Send everything to JavaScript
+    await webViewController?.runJavaScript('''
+                  window.epubResources = {
+                    css: ${jsonEncode(cssMap)},
+                    images: ${jsonEncode(imageMap)}
+                  };
+                  loadBookString(${jsonEncode(htmlContent)});
+                  ''');
+  }
+
+  List<ep.EpubChapterRef> collectSubChapters(ep.EpubChapterRef chapter) {
+    final List<ep.EpubChapterRef> subChapters = [];
+    subChapters.add(chapter);
+    if (chapter.subChapters.isNotEmpty) {
+      for (var subChapter in chapter.subChapters) {
+        subChapters.addAll(collectSubChapters(subChapter));
+      }
+    }
+    return subChapters;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FScaffold(
-      header: ReaderHeader(chapters: [], onChapterSelected: (index) {}),
+      header: ReaderHeader(
+        // TODO: SWITCH TO NAVIGATION SCHEMA / MAP
+        navigationMap: book?.schema?.navigation?.navMap,
+        onNavigationPointSelected: (navigationPoint) {
+          loadChapter(navigationPoint);
+        },
+      ),
       footer: SizedBox(
         height: 50,
         child: Row(
@@ -120,50 +183,8 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
               },
               icon: Icon(FIcons.arrowRight),
             ),
-            FButton(
-              onPress: () async {
-                final htmlContent =
-                    book?.content?.html.entries.elementAt(10).value.content ??
-                    '';
-
-                // Prepare CSS as a map
-                final cssMap = <String, String>{};
-                book?.content?.css.forEach((key, value) {
-                  final cssContent = value.content ?? '';
-                  cssMap[key] = cssContent;
-                });
-
-                // Prepare images as base64 data URIs
-                final imageMap = <String, String>{};
-                book?.content?.images.forEach((key, value) {
-                  try {
-                    final imageBytes = value.content;
-                    if (imageBytes != null && imageBytes.isNotEmpty) {
-                      final base64Image = base64Encode(imageBytes);
-                      final mimeType = _getMimeType(key);
-                      imageMap[key] = 'data:$mimeType;base64,$base64Image';
-                    }
-                  } catch (e) {
-                    print('Error encoding image $key: $e');
-                  }
-                });
-
-                print('HTML Content length: ${htmlContent.length}');
-                print('CSS files: ${cssMap.length}');
-                print('Images: ${imageMap.length}');
-
-                // Send everything to JavaScript
-                await webViewController?.runJavaScript('''
-                  window.epubResources = {
-                    css: ${jsonEncode(cssMap)},
-                    images: ${jsonEncode(imageMap)}
-                  };
-                  loadBookString(${jsonEncode(htmlContent)});
-                  ''');
-              },
-              child: Text("Load Book"),
-            ),
             Text("Page $currentPage / $totalPages"),
+            SizedBox(width: 10),
           ],
         ),
       ),

@@ -96,7 +96,7 @@ class _BookCardState extends ConsumerState<BookCard> {
     return GestureDetector(
       onTap: () async {
         if (localFileExists) {
-          ref.read(goRouterProvider).go("/read/${widget.book.id}");
+          ref.read(goRouterProvider).push("/read/${widget.book.id}");
         } else {
           setState(() {
             downloadProgress = ref

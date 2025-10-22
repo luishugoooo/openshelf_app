@@ -67,6 +67,11 @@ function updatePageCount() {
   );
 }
 
+function resetScrollerWidth() {
+  if (!scroller) return;
+  scroller.style.width = `${pageWidth}px`;
+}
+
 (window as any).nextPage = function () {
   if (!mask || currentPage >= totalPages) return;
   currentPage++;
@@ -126,15 +131,12 @@ if (document.readyState === "loading") {
       });
     });
   }
-
-  if (scroller) {
-    scroller.innerHTML = processedContent;
-  }
-  console.log("Book loaded successfully");
-
-  setTimeout(initializeReader, 100);
+  insertContent(processedContent);
 };
 
-(window as any).test = async function () {
-  console.log("TEST FROM JS");
-};
+function insertContent(content: string) {
+  if (!scroller) return;
+  resetScrollerWidth();
+  scroller.innerHTML = content;
+  initializeReader();
+}
