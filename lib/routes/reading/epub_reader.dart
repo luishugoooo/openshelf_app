@@ -182,7 +182,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     if (point == null) {
       return;
     }
-    final src = point.content?.source;
+    final src = point.content?.source?.split("#").first;
     if (src == null) {
       return;
     }

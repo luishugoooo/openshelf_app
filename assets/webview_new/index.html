@@ -15,7 +15,8 @@
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden; /* Critical: prevents vertical scrollbars */
-        font-family: sans-serif;
+        font-family: Redaction, serif;
+        font-size: 18px;
       }
 
       /* The viewport for the pages */
@@ -40,6 +41,27 @@
 
       #viewer-scroller > * {
         padding: 0 20px !important;
+      }
+
+      @font-face {
+        font-family: 'Redaction';
+        src: url('/fonts/Redaction-Regular.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: 'Redaction';
+        src: url('/fonts/Redaction-Bold.woff2') format('woff2');
+        font-weight: bold;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: 'Redaction';
+        src: url('/fonts/Redaction-Italic.woff2') format('woff2');
+        font-weight: normal;
+        font-style: italic;
       }
     </style>
   </head>
