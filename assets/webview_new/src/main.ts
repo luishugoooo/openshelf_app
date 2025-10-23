@@ -30,6 +30,7 @@ let scroller: HTMLElement | null;
 let currentPage = 1;
 let totalPages = 1;
 let pageWidth = 0;
+let isFirstLoad = true;
 
 function computePageWidth(): number {
   if (!mask) return 0;
@@ -44,6 +45,7 @@ function applyPageWidth() {
 }
 
 function initializeReader() {
+  console.log("INITIALIZING READER:", currentPage, totalPages);
   if (!mask || !scroller) return;
 
   applyPageWidth();
@@ -62,6 +64,7 @@ function initializeReader() {
 }
 
 function updatePageCount() {
+  console.log("UPDATING PAGE COUNT:", currentPage, totalPages);
   PageCountChannel.postMessage(
     JSON.stringify({ current: currentPage, total: totalPages })
   );
@@ -69,7 +72,11 @@ function updatePageCount() {
 
 function resetScrollerWidth() {
   if (!scroller) return;
-  scroller.style.width = `${pageWidth}px`;
+  if (pageWidth > 0) {
+    scroller.style.width = `${pageWidth}px`;
+  } else {
+    scroller.style.removeProperty("width");
+  }
 }
 
 (window as any).nextPage = function () {
@@ -86,11 +93,19 @@ function resetScrollerWidth() {
   updatePageCount();
 };
 
+function setupResizeListener() {
+  window.addEventListener("resize", () => {
+    resetScrollerWidth();
+    initializeReader();
+  });
+}
+
 function setupPaginationControls() {
   mask = document.getElementById("viewer-mask");
   scroller = document.getElementById("viewer-scroller");
-  window.addEventListener("load", initializeReader);
-  window.addEventListener("resize", initializeReader);
+  window.addEventListener("load", () => {
+    InterfaceControlChannel.postMessage("ready");
+  });
 }
 
 if (document.readyState === "loading") {
@@ -103,6 +118,7 @@ if (document.readyState === "loading") {
   console.log("CONTENT FROM JS, length:", content.length);
 
   const resources: EpubResources = (window as any).epubResources;
+  console.log("RESOURCES FROM JS:", resources, new Date().toISOString());
 
   if (resources?.css) {
     console.log("Applying CSS files:", Object.keys(resources.css).length);
@@ -134,9 +150,61 @@ if (document.readyState === "loading") {
   insertContent(processedContent);
 };
 
-function insertContent(content: string) {
+function raf(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForNonZeroPageWidth(maxFrames = 60): Promise<number> {
+  let width = computePageWidth();
+  for (let i = 0; i < maxFrames && width <= 0; i++) {
+    await raf();
+    width = computePageWidth();
+  }
+  return width;
+}
+
+async function waitForImagesToLoad(container: HTMLElement, timeoutMs = 3000) {
+  const images = Array.from(container.querySelectorAll("img"));
+  if (images.length === 0) return;
+  await Promise.race([
+    Promise.all(
+      images.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              const done = () => {
+                img.removeEventListener("load", done);
+                img.removeEventListener("error", done);
+                resolve();
+              };
+              img.addEventListener("load", done, { once: true });
+              img.addEventListener("error", done, { once: true });
+            })
+      )
+    ),
+    new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+  ]);
+}
+
+async function insertContent(content: string) {
   if (!scroller) return;
   resetScrollerWidth();
   scroller.innerHTML = content;
+
+  // Ensure viewport has a non-zero width (important on first load in WebViews)
+  await waitForNonZeroPageWidth(60);
+  // Give the browser a frame to apply DOM changes
+  await raf();
+
+  // If images are present, wait briefly for them (data URIs resolve fast)
+  await waitForImagesToLoad(scroller);
+
   initializeReader();
+  ContentControlChannel.postMessage("loaded");
+
+  // Setup resize listener only after first initialization to avoid double init
+  if (isFirstLoad) {
+    isFirstLoad = false;
+    setupResizeListener();
+  }
 }

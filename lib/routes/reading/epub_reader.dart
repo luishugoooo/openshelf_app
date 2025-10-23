@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -25,13 +26,15 @@ class EpubReader extends ConsumerStatefulWidget {
 
 class _EpubReaderState extends ConsumerState<EpubReader> {
   WebViewController? webViewController;
-  ep.EpubBookRef? book;
+  late Future<ep.EpubBookRef> book;
+  bool readerReady = false;
+  Map<String, String> cssMap = {};
+  Map<String, String> imageMap = {};
   int currentPage = 1;
   int totalPages = 1;
 
   void parseBook() async {
-    book = await ep.EpubReader.openBook(widget.epubBytes);
-    setState(() {});
+    book = ep.EpubReader.openBook(widget.epubBytes);
   }
 
   String _getMimeType(String filename) {
@@ -45,10 +48,23 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     return 'image/jpeg'; // default
   }
 
-  @override
-  void initState() {
+  Future<void> initializeReader() async {
     parseBook();
-    super.initState();
+    initWebView(
+      onReady: () async {
+        final book = await this.book;
+        await createCSSMap(book);
+        await createImageMap(book);
+        await loadResources();
+        await loadChapter(book.schema?.navigation?.navMap?.points.first);
+        setState(() {
+          readerReady = true;
+        });
+      },
+    );
+  }
+
+  void initWebView({required VoidCallback onReady}) async {
     webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -80,15 +96,37 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
           });
         },
       )
+      ..addJavaScriptChannel(
+        "ContentControlChannel",
+        onMessageReceived: (JavaScriptMessage message) {
+          print("DART RECEIVED CONTENT CONTROL MESSAGE: ${message.message}");
+        },
+      )
+      ..addJavaScriptChannel(
+        "InterfaceControlChannel",
+        onMessageReceived: (JavaScriptMessage message) async {
+          print("DART RECEIVED INTERFACE CONTROL MESSAGE: ${message.message}");
+          if (message.message == "ready") {
+            onReady();
+          }
+        },
+      )
       ..setOnConsoleMessage((message) {
         print("DART RECEIVED JS CONSOLE MESSAGE: ${message.message}");
       });
 
     if (kDebugMode) {
-      webViewController?.loadRequest(Uri.parse("http://localhost:5173"));
+      webViewController?.loadRequest(Uri.parse("http://192.168.178.22:5173"));
     } else {
       webViewController?.loadFlutterAsset("assets/webview_new/dist/index.html");
     }
+  }
+
+  @override
+  void initState() {
+    parseBook();
+    super.initState();
+    initializeReader();
   }
 
   @override
@@ -100,27 +138,19 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   }
 
   //TODO separate asset loading from chapter loading for better performance
-  Future<void> loadChapter(ep.EpubNavigationPoint point) async {
-    final src = point.content?.source;
-    if (src == null) {
-      return;
-    }
-    final htmlContent = await book?.content?.html[src]?.readContentAsText();
-    if (htmlContent == null) {
-      return;
-    }
-    final cssMap = <String, String>{};
-    final cssRefs = book?.content?.css;
+
+  Future<void> createCSSMap(ep.EpubBookRef book) async {
+    final cssRefs = book.content?.css;
     if (cssRefs != null) {
       for (var cssEl in cssRefs.entries) {
         final cssContent = await cssEl.value.readContentAsText();
         cssMap[cssEl.key] = cssContent;
       }
     }
+  }
 
-    // Prepare images as base64 data URIs
-    final imageMap = <String, String>{};
-    final imageRefs = book?.content?.images;
+  Future<void> createImageMap(ep.EpubBookRef book) async {
+    final imageRefs = book.content?.images;
     if (imageRefs != null) {
       for (var imageEl in imageRefs.entries) {
         final imageBytes = await imageEl.value.readContentAsBytes();
@@ -131,6 +161,38 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         }
       }
     }
+  }
+
+  Future<void> loadResources() async {
+    assert(
+      cssMap.isNotEmpty && imageMap.isNotEmpty,
+      "CSS and image maps must be created before loading resources",
+    );
+    await webViewController?.runJavaScript('''
+                  window.epubResources = {
+                    css: ${jsonEncode(cssMap)},
+                    images: ${jsonEncode(imageMap)}
+                  };
+                  ''');
+    //await Future.delayed(Duration(seconds: 10));
+    print("RESOURCES LOADED: ${DateTime.now()}");
+  }
+
+  Future<void> loadChapter(ep.EpubNavigationPoint? point) async {
+    if (point == null) {
+      return;
+    }
+    final src = point.content?.source;
+    if (src == null) {
+      return;
+    }
+    print("BOOK: ${DateTime.now()}");
+    final book = await this.book;
+    final htmlContent = await book.content?.html[src]?.readContentAsText();
+    if (htmlContent == null) {
+      return;
+    }
+    print("HTML CONTENT: ${DateTime.now()}");
 
     print('HTML Content length: ${htmlContent.length}');
     print('CSS files: ${cssMap.length}');
@@ -138,12 +200,8 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
 
     // Send everything to JavaScript
     await webViewController?.runJavaScript('''
-                  window.epubResources = {
-                    css: ${jsonEncode(cssMap)},
-                    images: ${jsonEncode(imageMap)}
-                  };
-                  loadBookString(${jsonEncode(htmlContent)});
-                  ''');
+    loadBookString(${jsonEncode(htmlContent)});
+    ''');
   }
 
   List<ep.EpubChapterRef> collectSubChapters(ep.EpubChapterRef chapter) {
@@ -160,13 +218,26 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   @override
   Widget build(BuildContext context) {
     return FScaffold(
-      header: ReaderHeader(
-        // TODO: SWITCH TO NAVIGATION SCHEMA / MAP
-        navigationMap: book?.schema?.navigation?.navMap,
-        onNavigationPointSelected: (navigationPoint) {
-          loadChapter(navigationPoint);
+      childPad: false,
+      header: FutureBuilder(
+        future: book,
+        builder: (context, asyncSnapshot) {
+          if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+            return ReaderHeader(
+              navigationMap: null,
+              onNavigationPointSelected: (navigationPoint) {},
+            );
+          }
+          final book = asyncSnapshot.data;
+          return ReaderHeader(
+            navigationMap: book?.schema?.navigation?.navMap,
+            onNavigationPointSelected: (navigationPoint) {
+              loadChapter(navigationPoint);
+            },
+          );
         },
       ),
+
       footer: SizedBox(
         height: 50,
         child: Row(
@@ -188,10 +259,9 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
           ],
         ),
       ),
-      child: book == null
-          ? Text("loading")
-          : Center(
-              child: Stack(
+      child: Center(
+        child: readerReady
+            ? Stack(
                 children: [
                   WebViewWidget(
                     controller: webViewController!,
@@ -207,8 +277,9 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
                     },
                   ),
                 ],
-              ),
-            ),
+              )
+            : CircularProgressIndicator(),
+      ),
     );
   }
 }

@@ -67,7 +67,7 @@ class ReaderHeader extends ConsumerWidget {
                             actions: [],
                             style: (p0) => p0.copyWith(
                               insetPadding: EdgeInsets.symmetric(
-                                horizontal: 16.0,
+                                horizontal: 20.0,
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
@@ -120,7 +120,14 @@ class ReaderHeader extends ConsumerWidget {
                                             navigationMap != null
                                             ? RecursiveChapterBox(
                                                 onNavigationPointSelected:
-                                                    onNavigationPointSelected,
+                                                    (navigationPoint) {
+                                                      onNavigationPointSelected(
+                                                        navigationPoint,
+                                                      );
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop();
+                                                    },
                                                 navigationPoint: navigationMap!
                                                     .points[index],
                                                 topLevel: true,
