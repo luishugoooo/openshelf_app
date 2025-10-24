@@ -31,6 +31,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   bool readerReady = false;
   Map<String, String> cssMap = {};
   Map<String, String> imageMap = {};
+  bool androidHybridComposition = false;
   int currentPage = 1;
   int totalPages = 1;
 
@@ -261,6 +262,15 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
             ),
             Text("Page $currentPage / $totalPages"),
             SizedBox(width: 10),
+            Text("HC"),
+            Switch(
+              value: androidHybridComposition,
+              onChanged: (value) {
+                setState(() {
+                  androidHybridComposition = value;
+                });
+              },
+            ),
           ],
         ),
       ),
@@ -273,7 +283,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
                       controller:
                           webViewController!.platform
                               as AndroidWebViewController,
-                      displayWithHybridComposition: true,
+                      displayWithHybridComposition: androidHybridComposition,
                     ),
                   ),
                   GestureDetector(
