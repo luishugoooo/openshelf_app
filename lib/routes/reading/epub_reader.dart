@@ -10,6 +10,7 @@ import 'package:openshelf_app/routes/reading/logic/epub_controller.dart';
 import 'package:openshelf_app/routes/reading/reader_header.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:epub_pro/epub_pro.dart' as ep;
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class EpubReader extends ConsumerStatefulWidget {
   final Uint8List epubBytes;
@@ -114,6 +115,10 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
       ..setOnConsoleMessage((message) {
         print("DART RECEIVED JS CONSOLE MESSAGE: ${message.message}");
       });
+
+    if (webViewController?.platform is AndroidWebViewController) {
+      AndroidWebViewController.enableDebugging(true);
+    }
 
     if (kDebugMode) {
       webViewController?.loadRequest(Uri.parse("http://192.168.178.22:5173"));
@@ -263,9 +268,13 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         child: readerReady
             ? Stack(
                 children: [
-                  WebViewWidget(
-                    controller: webViewController!,
-                    gestureRecognizers: {},
+                  WebViewWidget.fromPlatformCreationParams(
+                    params: AndroidWebViewWidgetCreationParams(
+                      controller:
+                          webViewController!.platform
+                              as AndroidWebViewController,
+                      displayWithHybridComposition: true,
+                    ),
                   ),
                   GestureDetector(
                     onHorizontalDragEnd: (details) {
