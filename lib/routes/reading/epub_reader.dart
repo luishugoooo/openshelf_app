@@ -143,7 +143,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     final cssRefs = book.content?.css;
     if (cssRefs != null) {
       for (var cssEl in cssRefs.entries) {
-        final cssContent = await cssEl.value.readContentAsText();
+        final cssContent = await cssEl.value.readContentAsync();
         cssMap[cssEl.key] = cssContent;
       }
     }
