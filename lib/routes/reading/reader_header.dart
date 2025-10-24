@@ -10,10 +10,14 @@ import 'package:openshelf_app/routes/reading/recursive_chapter_box.dart';
 
 class ReaderHeader extends ConsumerWidget {
   final Function(EpubNavigationPoint) onNavigationPointSelected;
+  final VoidCallback onNavigationOpen;
+  final VoidCallback onNavigationClose;
   const ReaderHeader({
     super.key,
     required this.navigationMap,
     required this.onNavigationPointSelected,
+    required this.onNavigationOpen,
+    required this.onNavigationClose,
   });
 
   final EpubNavigationMap? navigationMap;
@@ -41,12 +45,16 @@ class ReaderHeader extends ConsumerWidget {
               ),
               FButton(
                 onPress: () async {
+                  onNavigationOpen();
                   await showFDialog(
                     context: context,
                     style: (p0) => p0.copyWith(
                       barrierFilter: (animation) => ColorFilter.mode(
                         Colors.transparent,
                         BlendMode.srcOver,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     builder:
@@ -65,17 +73,17 @@ class ReaderHeader extends ConsumerWidget {
                               ),
                             ),
                             actions: [],
+
                             style: (p0) => p0.copyWith(
                               insetPadding: EdgeInsets.symmetric(
                                 horizontal: 20.0,
                               ),
+
                               decoration: BoxDecoration(
                                 border: Border.all(
                                   width: 1,
-
                                   color: context.theme.colors.border,
                                 ),
-
                                 color: Colors.white.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -86,7 +94,7 @@ class ReaderHeader extends ConsumerWidget {
                             ),
                             body: Column(
                               children: [
-                                Container(
+                                SizedBox(
                                   height: 500,
                                   child: ScrollConfiguration(
                                     behavior: ScrollConfiguration.of(
@@ -124,6 +132,7 @@ class ReaderHeader extends ConsumerWidget {
                                                       onNavigationPointSelected(
                                                         navigationPoint,
                                                       );
+                                                      onNavigationClose();
                                                       Navigator.of(
                                                         context,
                                                       ).pop();

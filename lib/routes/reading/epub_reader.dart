@@ -25,13 +25,18 @@ class EpubReader extends ConsumerStatefulWidget {
   ConsumerState<EpubReader> createState() => _EpubReaderState();
 }
 
+// Consider keeping the reader offstage for super fast startup times
 class _EpubReaderState extends ConsumerState<EpubReader> {
   WebViewController? webViewController;
   late Future<ep.EpubBookRef> book;
   bool readerReady = false;
   Map<String, String> cssMap = {};
   Map<String, String> imageMap = {};
-  bool androidHybridComposition = false;
+
+  /// Whether to use hybrid composition for Android.
+  /// Hybrid composition improves WebView performance (smoother swiping), but decreases Flutter performance.
+  /// For now, it is disabled by default.
+  static const bool ANDROID_HYBRID_COMPOSITION = false;
   int currentPage = 1;
   int totalPages = 1;
 
@@ -120,9 +125,8 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     if (webViewController?.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
     }
-
     if (kDebugMode) {
-      webViewController?.loadRequest(Uri.parse("http://192.168.178.22:5173"));
+      webViewController?.loadRequest(Uri.parse("http://192.168.178.20:5173"));
     } else {
       webViewController?.loadFlutterAsset("assets/webview_new/dist/index.html");
     }
@@ -210,15 +214,16 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     ''');
   }
 
-  List<ep.EpubChapterRef> collectSubChapters(ep.EpubChapterRef chapter) {
-    final List<ep.EpubChapterRef> subChapters = [];
-    subChapters.add(chapter);
-    if (chapter.subChapters.isNotEmpty) {
-      for (var subChapter in chapter.subChapters) {
-        subChapters.addAll(collectSubChapters(subChapter));
-      }
+  Widget buildWebViewWidget(WebViewController controller) {
+    if (controller.platform is AndroidWebViewController) {
+      return WebViewWidget.fromPlatformCreationParams(
+        params: AndroidWebViewWidgetCreationParams(
+          controller: controller.platform,
+          displayWithHybridComposition: ANDROID_HYBRID_COMPOSITION,
+        ),
+      );
     }
-    return subChapters;
+    return WebViewWidget(controller: controller);
   }
 
   @override
@@ -230,12 +235,16 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         builder: (context, asyncSnapshot) {
           if (asyncSnapshot.connectionState == ConnectionState.waiting) {
             return ReaderHeader(
+              onNavigationOpen: () {},
+              onNavigationClose: () {},
               navigationMap: null,
               onNavigationPointSelected: (navigationPoint) {},
             );
           }
           final book = asyncSnapshot.data;
           return ReaderHeader(
+            onNavigationOpen: () {},
+            onNavigationClose: () {},
             navigationMap: book?.schema?.navigation?.navMap,
             onNavigationPointSelected: (navigationPoint) {
               loadChapter(navigationPoint);
@@ -260,17 +269,9 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
               },
               icon: Icon(FIcons.arrowRight),
             ),
+
             Text("Page $currentPage / $totalPages"),
             SizedBox(width: 10),
-            Text("HC"),
-            Switch(
-              value: androidHybridComposition,
-              onChanged: (value) {
-                setState(() {
-                  androidHybridComposition = value;
-                });
-              },
-            ),
           ],
         ),
       ),
@@ -278,14 +279,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
         child: readerReady
             ? Stack(
                 children: [
-                  WebViewWidget.fromPlatformCreationParams(
-                    params: AndroidWebViewWidgetCreationParams(
-                      controller:
-                          webViewController!.platform
-                              as AndroidWebViewController,
-                      displayWithHybridComposition: androidHybridComposition,
-                    ),
-                  ),
+                  buildWebViewWidget(webViewController!),
                   GestureDetector(
                     onHorizontalDragEnd: (details) {
                       if (details.primaryVelocity! < 0) {
