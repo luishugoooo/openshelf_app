@@ -82,14 +82,27 @@ function resetScrollerWidth() {
 (window as any).nextPage = function () {
   if (!mask || currentPage >= totalPages) return;
   currentPage++;
-  mask.scrollLeft = (currentPage - 1) * pageWidth;
+  mask.scrollTo({
+    left: (currentPage - 1) * pageWidth,
+    behavior: "smooth",
+  });
   updatePageCount();
 };
 
 (window as any).prevPage = function () {
   if (!mask || currentPage <= 1) return;
   currentPage--;
-  mask.scrollLeft = (currentPage - 1) * pageWidth;
+  mask.scrollTo({
+    left: (currentPage - 1) * pageWidth,
+    behavior: "smooth",
+  });
+  updatePageCount();
+};
+
+(window as any).scrollToPage = function (page: number) {
+  if (!mask || page < 1 || page > totalPages) return;
+  mask.scrollLeft = (page - 1) * pageWidth;
+  currentPage = page;
   updatePageCount();
 };
 
@@ -114,7 +127,10 @@ if (document.readyState === "loading") {
   setupPaginationControls();
 }
 
-(window as any).loadBookString = async function (content: string) {
+(window as any).loadBookString = async function (
+  content: string,
+  anchor: string | null
+) {
   console.log("CONTENT FROM JS, length:", content.length);
 
   const resources: EpubResources = (window as any).epubResources;
@@ -147,7 +163,11 @@ if (document.readyState === "loading") {
       });
     });
   }
+
   insertContent(processedContent);
+  if (anchor) {
+    (window as any).scrollToAnchor(anchor);
+  }
 };
 
 function raf(): Promise<void> {
@@ -208,3 +228,21 @@ async function insertContent(content: string) {
     setupResizeListener();
   }
 }
+
+(window as any).scrollToAnchor = function (anchor: string) {
+  if (!anchor) return;
+  let element = document.getElementById(anchor);
+  if (!element) {
+    console.log("ELEMENT NOT FOUND:", anchor);
+    return;
+  }
+  //TODO: Sometimes the calculation is a bit off, figure it out
+  let elementPage = Math.ceil(element.offsetLeft / pageWidth);
+  if (elementPage < 1) {
+    elementPage = 1;
+  }
+  if (elementPage > totalPages) {
+    elementPage = totalPages;
+  }
+  (window as any).scrollToPage(elementPage);
+};

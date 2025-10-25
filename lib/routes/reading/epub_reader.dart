@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
 import 'package:openshelf_app/routes/reading/logic/epub_controller.dart';
 import 'package:openshelf_app/routes/reading/reader_header.dart';
+import 'package:openshelf_app/routes/reading/utils/resources.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:epub_pro/epub_pro.dart' as ep;
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -30,8 +29,6 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   WebViewController? webViewController;
   late Future<ep.EpubBookRef> book;
   bool readerReady = false;
-  Map<String, String> cssMap = {};
-  Map<String, String> imageMap = {};
 
   /// Whether to use hybrid composition for Android.
   /// Hybrid composition improves WebView performance (smoother swiping), but decreases Flutter performance.
@@ -44,25 +41,14 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     book = ep.EpubReader.openBook(widget.epubBytes);
   }
 
-  static String getMimeType(String filename) {
-    final lower = filename.toLowerCase();
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-    if (lower.endsWith('.png')) return 'image/png';
-    if (lower.endsWith('.gif')) return 'image/gif';
-    if (lower.endsWith('.svg')) return 'image/svg+xml';
-    if (lower.endsWith('.webp')) return 'image/webp';
-    if (lower.endsWith('.bmp')) return 'image/bmp';
-    return 'image/jpeg'; // default
-  }
-
   Future<void> initializeReader() async {
     parseBook();
     initWebView(
       onReady: () async {
         final book = await this.book;
-        await createCSSMap(book);
-        await createImageMap(book);
-        await loadResources();
+        final cssMap = await createCSSMap(book);
+        final imageMap = await createImageMap(book);
+        await loadResourcesIntoWebView(imageMap, cssMap, webViewController!);
         await loadChapter(book.schema?.navigation?.navMap?.points.first);
         setState(() {
           readerReady = true;
@@ -126,7 +112,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
       AndroidWebViewController.enableDebugging(true);
     }
     if (kDebugMode) {
-      webViewController?.loadRequest(Uri.parse("http://localhost:5173"));
+      webViewController?.loadRequest(Uri.parse("http://10.0.2.2:5173"));
     } else {
       webViewController?.loadFlutterAsset("assets/webview_new/dist/index.html");
     }
@@ -149,82 +135,30 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
 
   //TODO separate asset loading from chapter loading for better performance
 
-  Future<void> createCSSMap(ep.EpubBookRef book) async {
-    final cssRefs = book.content?.css;
-    if (cssRefs != null) {
-      for (var cssEl in cssRefs.entries) {
-        final cssContent = await cssEl.value.readContentAsync();
-        cssMap[cssEl.key] = cssContent;
-      }
-    }
-  }
-
-  Future<void> createImageMap(ep.EpubBookRef book) async {
-    final imageRefs = book.content?.images;
-    if (imageRefs != null) {
-      final byteMap = <String, List<int>>{};
-      for (var imageEl in imageRefs.entries) {
-        final imageBytes = await imageEl.value.readContentAsBytes();
-        if (imageBytes.isNotEmpty) {
-          byteMap[imageEl.key] = imageBytes;
-        }
-      }
-      imageMap = await compute(encodeImages, byteMap);
-    }
-  }
-
-  static Future<Map<String, String>> encodeImages(
-    Map<String, List<int>> byteMap,
-  ) async {
-    final result = <String, String>{};
-    for (var imageEl in byteMap.entries) {
-      final imageBytes = imageEl.value;
-      final mimeType = getMimeType(imageEl.key);
-      final base64Image = base64Encode(imageBytes);
-      result[imageEl.key] = 'data:$mimeType;base64,$base64Image';
-    }
-    return result;
-  }
-
-  Future<void> loadResources() async {
-    assert(
-      cssMap.isNotEmpty && imageMap.isNotEmpty,
-      "CSS and image maps must be created before loading resources",
-    );
-    String encodedImages = await compute(jsonEncode, imageMap);
-    await webViewController?.runJavaScript('''
-                  window.epubResources = {
-                    css: ${jsonEncode(cssMap)},
-                    images: $encodedImages
-                  };
-                  ''');
-    //await Future.delayed(Duration(seconds: 10));
-    print("RESOURCES LOADED: ${DateTime.now()}");
-  }
-
   Future<void> loadChapter(ep.EpubNavigationPoint? point) async {
     if (point == null) {
       return;
     }
     final src = point.content?.source?.split("#").first;
+    final anchor = point.content?.source?.split("#").last;
     if (src == null) {
       return;
     }
-    print("BOOK: ${DateTime.now()}");
     final book = await this.book;
     final htmlContent = await book.content?.html[src]?.readContentAsText();
     if (htmlContent == null) {
       return;
     }
-    print("HTML CONTENT: ${DateTime.now()}");
 
-    print('HTML Content length: ${htmlContent.length}');
-    print('CSS files: ${cssMap.length}');
-    print('Images: ${imageMap.length}');
+    String htmlContentEncoded;
+    if (kDebugMode) {
+      htmlContentEncoded = jsonEncode(htmlContent);
+    } else {
+      htmlContentEncoded = await compute(jsonEncode, htmlContent);
+    }
 
-    // Send everything to JavaScript
     await webViewController?.runJavaScript('''
-    loadBookString(${jsonEncode(htmlContent)});
+    loadBookString($htmlContentEncoded, ${jsonEncode(anchor)});
     ''');
   }
 

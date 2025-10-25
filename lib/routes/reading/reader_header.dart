@@ -47,12 +47,16 @@ class ReaderHeader extends ConsumerWidget {
                 onPress: () async {
                   onNavigationOpen();
                   await showFDialog(
+                    routeStyle: (style) {
+                      return style.copyWith(
+                        barrierFilter: (animation) => ColorFilter.mode(
+                          Colors.transparent,
+                          BlendMode.srcOver,
+                        ),
+                      );
+                    },
                     context: context,
                     style: (p0) => p0.copyWith(
-                      barrierFilter: (animation) => ColorFilter.mode(
-                        Colors.transparent,
-                        BlendMode.srcOver,
-                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -92,63 +96,57 @@ class ReaderHeader extends ConsumerWidget {
                                 sigmaY: animation.value * 5,
                               ),
                             ),
-                            body: Column(
-                              children: [
-                                SizedBox(
-                                  height: 500,
-                                  child: ScrollConfiguration(
-                                    behavior: ScrollConfiguration.of(
-                                      context,
-                                    ).copyWith(scrollbars: false),
-                                    child: ShaderMask(
-                                      shaderCallback: (Rect rect) {
-                                        return LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.purple,
-                                            Colors.transparent,
-                                            Colors.transparent,
-                                            Colors.purple,
-                                          ],
-                                          stops: [
-                                            0,
-                                            0.1,
-                                            0.9,
-                                            1.0,
-                                          ], // 10% purple, 80% transparent, 10% purple
-                                        ).createShader(rect);
-                                      },
-                                      blendMode: BlendMode.dstOut,
-                                      child: ListView.builder(
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 30.0,
-                                        ),
-                                        itemBuilder: (context, index) =>
-                                            navigationMap != null
-                                            ? RecursiveChapterBox(
-                                                onNavigationPointSelected:
-                                                    (navigationPoint) {
-                                                      onNavigationPointSelected(
-                                                        navigationPoint,
-                                                      );
-                                                      onNavigationClose();
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop();
-                                                    },
-                                                navigationPoint: navigationMap!
-                                                    .points[index],
-                                                topLevel: true,
-                                              )
-                                            : null,
-                                        itemCount:
-                                            navigationMap?.points.length ?? 0,
-                                      ),
+                            body: SizedBox(
+                              height: 500,
+                              child: ScrollConfiguration(
+                                behavior: ScrollConfiguration.of(
+                                  context,
+                                ).copyWith(scrollbars: false),
+                                child: ShaderMask(
+                                  shaderCallback: (Rect rect) {
+                                    return LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.purple,
+                                        Colors.transparent,
+                                        Colors.transparent,
+                                        Colors.purple,
+                                      ],
+                                      stops: [
+                                        0,
+                                        0.1,
+                                        0.9,
+                                        1.0,
+                                      ], // 10% purple, 80% transparent, 10% purple
+                                    ).createShader(rect);
+                                  },
+                                  blendMode: BlendMode.dstOut,
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 30.0,
                                     ),
+                                    itemBuilder: (context, index) =>
+                                        navigationMap != null
+                                        ? RecursiveChapterBox(
+                                            onNavigationPointSelected:
+                                                (navigationPoint) {
+                                                  onNavigationPointSelected(
+                                                    navigationPoint,
+                                                  );
+                                                  onNavigationClose();
+                                                  Navigator.of(context).pop();
+                                                },
+                                            navigationPoint:
+                                                navigationMap!.points[index],
+                                            topLevel: true,
+                                          )
+                                        : null,
+                                    itemCount:
+                                        navigationMap?.points.length ?? 0,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },
