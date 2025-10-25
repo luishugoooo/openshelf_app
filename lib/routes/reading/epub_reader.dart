@@ -44,7 +44,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
     book = ep.EpubReader.openBook(widget.epubBytes);
   }
 
-  String _getMimeType(String filename) {
+  static String getMimeType(String filename) {
     final lower = filename.toLowerCase();
     if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
     if (lower.endsWith('.png')) return 'image/png';
@@ -126,7 +126,7 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
       AndroidWebViewController.enableDebugging(true);
     }
     if (kDebugMode) {
-      webViewController?.loadRequest(Uri.parse("http://192.168.178.20:5173"));
+      webViewController?.loadRequest(Uri.parse("http://localhost:5173"));
     } else {
       webViewController?.loadFlutterAsset("assets/webview_new/dist/index.html");
     }
@@ -162,15 +162,28 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
   Future<void> createImageMap(ep.EpubBookRef book) async {
     final imageRefs = book.content?.images;
     if (imageRefs != null) {
+      final byteMap = <String, List<int>>{};
       for (var imageEl in imageRefs.entries) {
         final imageBytes = await imageEl.value.readContentAsBytes();
         if (imageBytes.isNotEmpty) {
-          final base64Image = base64Encode(imageBytes);
-          final mimeType = _getMimeType(imageEl.key);
-          imageMap[imageEl.key] = 'data:$mimeType;base64,$base64Image';
+          byteMap[imageEl.key] = imageBytes;
         }
       }
+      imageMap = await compute(encodeImages, byteMap);
     }
+  }
+
+  static Future<Map<String, String>> encodeImages(
+    Map<String, List<int>> byteMap,
+  ) async {
+    final result = <String, String>{};
+    for (var imageEl in byteMap.entries) {
+      final imageBytes = imageEl.value;
+      final mimeType = getMimeType(imageEl.key);
+      final base64Image = base64Encode(imageBytes);
+      result[imageEl.key] = 'data:$mimeType;base64,$base64Image';
+    }
+    return result;
   }
 
   Future<void> loadResources() async {
@@ -178,10 +191,11 @@ class _EpubReaderState extends ConsumerState<EpubReader> {
       cssMap.isNotEmpty && imageMap.isNotEmpty,
       "CSS and image maps must be created before loading resources",
     );
+    String encodedImages = await compute(jsonEncode, imageMap);
     await webViewController?.runJavaScript('''
                   window.epubResources = {
                     css: ${jsonEncode(cssMap)},
-                    images: ${jsonEncode(imageMap)}
+                    images: $encodedImages
                   };
                   ''');
     //await Future.delayed(Duration(seconds: 10));
